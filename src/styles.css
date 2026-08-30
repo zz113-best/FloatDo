@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/* class 策略的 dark 变体（而非默认的 prefers-color-scheme） */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent; /* 窗口透明的前提 */
+  font-family: system-ui, "Segoe UI", "Microsoft YaHei", sans-serif;
+  user-select: none;
+}
+
+/* ---------- 桌宠动画 ---------- */
+
+/* 平静：轻轻上下浮动 */
+@keyframes pet-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+/* 开心：弹跳 */
+@keyframes pet-bounce {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-14px) scale(0.96, 1.06); }
+  60% { transform: translateY(0) scale(1.05, 0.94); }
+  80% { transform: translateY(-4px) scale(0.99, 1.01); }
+}
+/* 低落：缓慢下沉 + 小幅歪头 */
+@keyframes pet-droop {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(3px) rotate(-2.5deg); }
+}
+/* 提醒：左右晃动引起注意 */
+@keyframes pet-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+/* 眨眼（作用于眼睛分组） */
+@keyframes pet-blink {
+  0%, 91%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+/* 气泡弹出 */
+@keyframes bubble-pop {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.9); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+.pet-idle { animation: pet-bob 3s ease-in-out infinite; }
+.pet-happy { animation: pet-bounce 0.7s ease-in-out infinite; }
+.pet-sad { animation: pet-droop 4s ease-in-out infinite; }
+.pet-alert { animation: pet-wiggle 0.5s ease-in-out infinite; }
+
+.pet-eyes {
+  animation: pet-blink 4.5s infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.bubble-pop {
+  animation: bubble-pop 200ms ease-out;
+}
+
+
+/* 照片桌宠：圆形照片 + 上下浮动（情绪通过外圈色环表达） */
+.pet-photo {
+  animation: pet-bob 3s ease-in-out infinite;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+/* ---------- 照片桌宠微动画（单帧静态形象的呼吸 / 眨眼） ---------- */
+
+/* 呼吸：整体缓慢起伏（origin 在底部，像蹲在桌面上呼吸） */
+@keyframes pet-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.015, 0.985); }
+}
+.pet-breathe {
+  animation: pet-breathe 3.2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* 眨眼：对静态图做一次极快的纵向轻压（scaleY 收缩再弹回），每 4.6s 一次 */
+@keyframes pet-photo-blink {
+  0%, 90.9%, 95%, 97.9%, 100% { transform: scaleY(1); }
+  93% { transform: scaleY(0.94); }
+  96.5% { transform: scaleY(0.97); }
+}
+.pet-photo-blink {
+  animation: pet-photo-blink 4.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
