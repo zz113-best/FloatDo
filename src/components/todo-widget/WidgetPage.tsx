@@ -14,8 +14,9 @@ import {
   pickUrgentTasks,
   todayStats,
   PRIORITY_META,
+  compareByPriorityThenOverdue,
 } from '../../utils/priority';
-import { formatDue } from '../../utils/time';
+import { formatDue, isOverdue } from '../../utils/time';
 import { SETTINGS_CHANGED_EVENT } from '../../services/settingsService';
 import { statsService } from '../../services/statsService';
 import { PET_TASKS_CHANGED_EVENT } from '../../services/petService';
@@ -76,13 +77,17 @@ export function WidgetPage() {
 
   const pending = useMemo(() => tasks.filter(isPending), [tasks]);
   const stats = useMemo(() => todayStats(tasks), [tasks]);
-  // 展开列表按优先级从高到低（排序稳定：同优先级内保持手动拖拽的顺序）
+  const overdueCount = useMemo(
+    () => pending.filter((t) => isOverdue(t.dueAt)).length,
+    [pending],
+  );
+  // 展开列表按优先级从高到低；同优先级内逾期置顶，其余保持手动拖拽的顺序
   const displayTasks = useMemo(
     () =>
       tasks
         .filter(isPending)
         .slice()
-        .sort((a, b) => PRIORITY_META[b.priority].rank - PRIORITY_META[a.priority].rank)
+        .sort(compareByPriorityThenOverdue)
         .slice(0, 8),
     [tasks],
   );
@@ -200,6 +205,7 @@ export function WidgetPage() {
         ) : (
           <Collapsed
             stats={stats}
+            overdueCount={overdueCount}
             rows={collapsed.rows}
             overflow={collapsed.overflow}
             focusRemaining={focusRemaining}
@@ -232,12 +238,14 @@ function DueTag({ task }: { task: Task }) {
 
 function Collapsed({
   stats,
+  overdueCount,
   rows,
   overflow,
   focusRemaining,
   focusPhase,
 }: {
   stats: Stats;
+  overdueCount: number;
   rows: Task[];
   overflow: number;
   focusRemaining: number | null;
@@ -247,7 +255,15 @@ function Collapsed({
     <div className="flex h-full flex-col px-3">
       <div className="flex items-center justify-between pt-2">
         <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">今日任务</span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {overdueCount > 0 && (
+            <span
+              title={`${overdueCount} 条任务已逾期`}
+              className="rounded-full bg-red-500/10 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-red-500"
+            >
+              逾期 {overdueCount}
+            </span>
+          )}
           <span className="text-sm font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">
             {stats.done}/{stats.total}
           </span>

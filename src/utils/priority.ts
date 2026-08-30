@@ -30,6 +30,16 @@ export function compareByImportance(a: Task, b: Task): number {
   return a.sortOrder - b.sortOrder;
 }
 
+/** 悬浮窗展开列表排序：优先级高在前；同优先级内逾期在前，其余保持手动拖拽顺序（stable sort）。 */
+export function compareByPriorityThenOverdue(a: Task, b: Task): number {
+  const pr = PRIORITY_META[b.priority].rank - PRIORITY_META[a.priority].rank;
+  if (pr !== 0) return pr;
+  const aOver = isOverdue(a.dueAt) ? 1 : 0;
+  const bOver = isOverdue(b.dueAt) ? 1 : 0;
+  if (aOver !== bOver) return bOver - aOver;
+  return 0;
+}
+
 /** 悬浮窗折叠态展示的“当前最重要任务”。 */
 export function pickTopTask(tasks: Task[]): Task | null {
   const pending = tasks.filter(isPending);
@@ -41,20 +51,22 @@ export function pickTopTask(tasks: Task[]): Task | null {
   return [...pool].sort(compareByImportance)[0];
 }
 
-/** 折叠态常驻显示的紧急任务（含逾期），按重要度排序。 */
+/** 折叠态常驻显示的紧急任务；逾期的不在这里显示（折叠条上只计入「逾期 N」徽标）。 */
 export function pickUrgentTasks(tasks: Task[]): Task[] {
   return tasks
-    .filter((t) => isPending(t) && t.priority === 'URGENT')
+    .filter((t) => isPending(t) && t.priority === 'URGENT' && !isOverdue(t.dueAt))
     .sort(compareByImportance);
 }
 
 /**
- * 折叠态里紧急任务之外的「接下来做」：
- * 有截止时间的取最近的一条；都没有截止时间就取最先创建的待办。
+ * 折叠态里紧急任务之外的「接下来做」：未逾期待办中截止时间最近的一条；
+ * 都没有截止时间就取最先创建的待办。逾期任务不算。
  */
 export function pickNextTask(tasks: Task[], exclude: Task[]): Task | null {
   const excluded = new Set(exclude.map((t) => t.id));
-  const pool = tasks.filter((t) => isPending(t) && !excluded.has(t.id));
+  const pool = tasks.filter(
+    (t) => isPending(t) && !excluded.has(t.id) && !isOverdue(t.dueAt),
+  );
   if (pool.length === 0) return null;
   const withDue = pool.filter((t) => t.dueAt);
   if (withDue.length > 0) {
